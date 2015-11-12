@@ -96,7 +96,7 @@ http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 		</property>
 		<property name="cronExpression">
 			<!-- <value>01 */30 * * * ?</value> -->
-			<value>01 39 11 * * ?</value>
+			<value>01 10 16 * * ?</value>
 		</property>
 	</bean>
 	<!-- 任务调度入口 -->

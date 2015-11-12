@@ -71,7 +71,7 @@ public class SougouSpiderByChrome {
 					WebElement aWebElement = webElement2.findElement(By
 							.className("news_lst_tab"));
 					aWebElement.click();
-					Thread.sleep((long) ((Math.random() * 60 + 10) * 1000));
+					Thread.sleep((long) ((Math.random() * 30 + 10) * 1000));
 					// waitForPageLoaded(driver);
 					String currentWindow = driver.getWindowHandle();
 					Set<String> handles = driver.getWindowHandles();
