@@ -17,9 +17,10 @@ public class WeiXinStoreToPlantform {
 	private static Log logger = LogFactory.getLog(WeiXinStoreToPlantform.class);
 
 	// 16096
-	public void saveWeixinBySql(Map<String, Object> information) {
+	public boolean saveWeixinBySql(Map<String, Object> information) {
 		SqlSession sqlSession = DynamicConnectionFactory
 				.getInstanceSessionFactory("development").openSession();
+		boolean isSave = true;
 		try {
 			SQLAdapterMapper sqlAdapterMapper = sqlSession
 					.getMapper(SQLAdapterMapper.class);
@@ -29,10 +30,11 @@ public class WeiXinStoreToPlantform {
 		} catch (Exception e) {
 			logger.info("保存微信到数据库失败", e);
 			sqlSession.rollback(true);
+			isSave = false;
 		} finally {
 			sqlSession.close();
 		}
-
+		return isSave;
 	}
 
 	private void saveWeixinText(Map<String, Object> information,

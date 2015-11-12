@@ -53,10 +53,16 @@ public class SougouSpiderByChrome {
 		for (String url : openids) {
 			try {
 				driver.get(url);
-				waitForPageLoaded(driver);
+				Thread.sleep((long) ((Math.random() * 60 + 10) * 1000));
+				// waitForPageLoaded(driver);
 				String html = driver.getPageSource();
+				if (html.contains("请输入验证码")) {
+					logger.info("已经被屏蔽");
+					break;
+				}
 				List<WebElement> webElement = driver.findElements(By
 						.className("wx-rb3"));
+				boolean isSave = true;
 				for (WebElement webElement2 : webElement) {
 					// s-p
 					WebElement timeElement = webElement2.findElement(By
@@ -65,10 +71,12 @@ public class SougouSpiderByChrome {
 					WebElement aWebElement = webElement2.findElement(By
 							.className("news_lst_tab"));
 					aWebElement.click();
-					waitForPageLoaded(driver);
+					Thread.sleep((long) ((Math.random() * 60 + 10) * 1000));
+					// waitForPageLoaded(driver);
 					String currentWindow = driver.getWindowHandle();
 					Set<String> handles = driver.getWindowHandles();
 					Iterator<String> it = handles.iterator();
+
 					while (it.hasNext()) {
 						String handle = it.next();
 						if (currentWindow.equals(handle)) {
@@ -77,11 +85,12 @@ public class SougouSpiderByChrome {
 						WebDriver window = driver.switchTo().window(handle);
 
 						try {
-							Thread.sleep(10000);
-							waitForPageLoaded(window);
+							// Thread.sleep(10000);
+							// waitForPageLoaded(window);
 							String ccurrentUrl = window.getCurrentUrl();
 							html = window.getPageSource();
-							saveInformation(html, time, ccurrentUrl);
+							isSave = saveInformation(html, time, ccurrentUrl);
+
 						} catch (Exception e) {
 							e.printStackTrace();
 						} finally {
@@ -89,6 +98,9 @@ public class SougouSpiderByChrome {
 						}
 					}
 					driver.switchTo().window(currentWindow);
+					if (!isSave) {
+						break;
+					}
 				}
 				Set<String> handles = driver.getWindowHandles();
 				if (handles.size() <= 1) {
@@ -101,6 +113,8 @@ public class SougouSpiderByChrome {
 				continue;
 			}
 		}
+
+		// 循环一轮以后，关闭浏览器
 	}
 
 	@PostConstruct
@@ -108,7 +122,6 @@ public class SougouSpiderByChrome {
 		// 在这个基础上先登录
 		String url = "http://weixin.sogou.com/";
 		driver.get(url);
-		// waitForPageLoaded(driver);
 		try {
 			Thread.sleep(60 * 1000);
 		} catch (InterruptedException e) {
@@ -124,7 +137,12 @@ public class SougouSpiderByChrome {
 		driver.manage().window().maximize();
 		// long timeout = 30000;
 		// TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+		//
 		// driver.manage().timeouts().pageLoadTimeout(timeout, timeUnit);
+		// 查找元素的超时时间
+		// driver.manage().timeouts().implicitlyWait(time, unit)
+		// 执行javascript 的执行时间
+		// driver.manage().timeouts().setScriptTimeout(time, unit);
 		return driver;
 	}
 
@@ -143,9 +161,9 @@ public class SougouSpiderByChrome {
 		}
 	}
 
-	private void saveInformation(String html, String time, String ccurrentUrl) {
+	public boolean saveInformation(String html, String time, String ccurrentUrl) {
 		if (SimpleBloomFilter.filter.contains(ccurrentUrl)) {
-			return;
+			return true;
 		} else {
 			SimpleBloomFilter.filter.add(ccurrentUrl);
 		}
@@ -161,7 +179,7 @@ public class SougouSpiderByChrome {
 		information.put("url", ccurrentUrl);
 		information.put("lastModified", time);
 		information.put("content", content);
-		new WeiXinStoreToPlantform().saveWeixinBySql(information);
+		return new WeiXinStoreToPlantform().saveWeixinBySql(information);
 	}
 
 	public static Date timestampToDate(String beginDate) {
