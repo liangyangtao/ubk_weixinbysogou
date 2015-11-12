@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.unbank.mybatis.mapper.SQLAdapterMapper">
+	<!-- 插入无需返回主键的实体 -->
+	<insert id="insertNoPriKey" parameterType="SQLAdapter">
+		${sql} (
+		<foreach item="item" index="key" collection="obj" open=""
+			separator="," close="">${key}</foreach>
+		) values (
+		<foreach item="item" index="key" collection="obj" open=""
+			separator="," close=""> #{item}</foreach>
+		)
+	</insert>
+	<!-- 插入返回主键的实体 -->
+	<insert id="insertReturnPriKey" parameterType="SQLAdapter">
+		<selectKey resultType="java.lang.Integer" keyProperty="prikey"
+			order="AFTER">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		${sql} (
+		<foreach item="item" index="key" collection="obj" open=""
+			separator="," close="">${key}</foreach>
+		) values (
+		<foreach item="item" index="key" collection="obj" open=""
+			separator="," close=""> #{item}</foreach>
+		)
+	</insert>
+	<!-- 执行 自定义SQL 即可 -->
+	<select id="executeSQL" parameterType="com.unbank.mybatis.entity.SQLAdapter">
+		${sql}
+	</select>
+</mapper>

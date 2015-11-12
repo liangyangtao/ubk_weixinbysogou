@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+http://www.springframework.org/schema/aop
+http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+http://www.springframework.org/schema/tx
+http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+http://www.springframework.org/schema/context
+http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+
+	<bean id="constants" class="com.unbank.Constants" init-method="init">
+		<property name="SERVERIP">
+			<value>10.0.2.120</value>
+		</property>
+		<property name="SERVERPORT">
+			<value>50035</value>
+		</property>
+		<property name="USE_SSL">
+			<value>false</value>
+		</property>
+		<property name="HEARTBEATRATE">
+			<value>10</value>
+		</property>
+		<property name="HEARTBEATREQUEST">
+			<value>HEARTBEATREQUEST</value>
+		</property>
+		<property name="HEARTBEATRESPONSE">
+			<value>HEARTBEATRESPONSE</value>
+		</property>
+		<property name="HEART_TIMEOUT">
+			<value>30000</value>
+		</property>
+		<property name="CLENT_TIMEOUT">
+			<value>30000</value>
+		</property>
+
+		<property name="ISTANCHUANG">
+			<value>false</value>
+		</property>
+
+	</bean>
+
+	<bean id="shardedJedisPool" class="redis.clients.jedis.ShardedJedisPool">
+		<constructor-arg index="0" ref="jedisPoolConfig" />
+		<constructor-arg index="1">
+			<list>
+				<bean name="master" class="redis.clients.jedis.JedisShardInfo">
+					<constructor-arg index="0" value="localhost" />
+					<constructor-arg index="1" value="6379" type="int" />
+				</bean>
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxTotal" value="2048" />
+		<property name="maxIdle" value="200" />
+		<property name="numTestsPerEvictionRun" value="1024" />
+		<property name="timeBetweenEvictionRunsMillis" value="30000" />
+		<property name="minEvictableIdleTimeMillis" value="-1" />
+		<property name="softMinEvictableIdleTimeMillis" value="10000" />
+		<property name="maxWaitMillis" value="1500" />
+		<property name="testOnBorrow" value="true" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnReturn" value="false" />
+		<property name="jmxEnabled" value="true" />
+		<property name="jmxNamePrefix" value="youyuan" />
+		<property name="blockWhenExhausted" value="false" />
+	</bean>
+
+	<context:annotation-config />
+	<context:component-scan base-package="com.unbank" />
+	<tx:annotation-driven />
+
+	<!-- quartz发送失败后的再次开启定时再次传输 -->
+	<!-- 定义任务 -->
+	<!-- 定时检测内容 -->
+	<bean id="startWeixinSpiderQuartzJobTask"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<!-- 调用的类 -->
+		<property name="targetObject" ref="startWeiXinGongZhonghaoSpider">
+		</property>
+		<!-- 调用类中的方法 -->
+		<property name="targetMethod" value="executeInternal">
+		</property>
+	</bean>
+	<!-- 任务触发器 -->
+	<bean id="startWeixinSpiderQuartzTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail">
+			<ref bean="startWeixinSpiderQuartzJobTask" />
+		</property>
+		<property name="cronExpression">
+			<!-- <value>01 */30 * * * ?</value> -->
+			<value>01 39 11 * * ?</value>
+		</property>
+	</bean>
+	<!-- 任务调度入口 -->
+	<bean lazy-init="false"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="startWeixinSpiderQuartzTrigger" />
+			</list>
+		</property>
+	</bean>
+
+</beans>
